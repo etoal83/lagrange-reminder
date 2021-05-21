@@ -1,3 +1,4 @@
+use std::net::SocketAddr;
 use serde_derive::{Deserialize, Serialize};
 use warp::Filter;
 
@@ -55,7 +56,7 @@ async fn main() {
     );
 
     // POST /employees/:rate  {"name": "Henrietta", "rate": 3}
-    let promote = warp::post()
+    let _promote = warp::post()
         .and(warp::path("employees"))
         .and(warp::path::param::<u32>())
         .and(warp::body::content_length_limit(1024 * 16))
@@ -65,5 +66,16 @@ async fn main() {
             warp::reply::json(&employee)
         });
 
-    warp::serve(promote).run(([127, 0, 0, 1], 3030)).await;
+    // A server that requires header conditions
+    // - `Host` is a `SocketAddr`
+    // - `Accept` is exactly `*/*`
+    //
+    let host = warp::header::<SocketAddr>("host");
+    let accept_stars = warp::header::exact("accept", "*/*");
+
+    let routes = host
+        .and(accept_stars)
+        .map(|addr| format!("accepting stars on {}", addr));
+
+    warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
 }
