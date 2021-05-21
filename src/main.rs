@@ -1,4 +1,11 @@
+use serde_derive::{Deserialize, Serialize};
 use warp::Filter;
+
+#[derive(Deserialize, Serialize)]
+struct Employee {
+    name: String,
+    rate: u32,
+}
 
 #[tokio::main]
 async fn main() {
@@ -31,14 +38,13 @@ async fn main() {
     let sum = sum.map(|output| format!("(This route has moved to /math/sum/:u32/:u32) {}", output));
     let times = times.map(|output| format!("(This route has moved to /math/:u16/times/:u16) {}", output));
 
-
     // GET /bye/:string
     let bye = warp::path("bye")
         .and(warp::path::param())
         .map(|name: String| format!("Good bye, {}!", name));
 
     // Combine all the defined routes into the single API
-    let routes = warp::get().and(
+    let _routes = warp::get().and(
         hello_world
             .or(hi)
             .or(hello_from_warp)
@@ -48,5 +54,16 @@ async fn main() {
             .or(times),
     );
 
-    warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
+    // POST /employees/:rate  {"name": "Henrietta", "rate": 3}
+    let promote = warp::post()
+        .and(warp::path("employees"))
+        .and(warp::path::param::<u32>())
+        .and(warp::body::content_length_limit(1024 * 16))
+        .and(warp::body::json())
+        .map(|rate, mut employee: Employee| {
+            employee.rate = rate;
+            warp::reply::json(&employee)
+        });
+
+    warp::serve(promote).run(([127, 0, 0, 1], 3030)).await;
 }
