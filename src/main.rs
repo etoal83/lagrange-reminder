@@ -10,7 +10,7 @@ struct Employee {
 
 #[tokio::main]
 async fn main() {
-    // pretty_env_logger::init();
+    pretty_env_logger::init();
 
     // GET /
     let hello_world = warp::path::end().map(|| "Hello, World at root!");
